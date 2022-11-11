@@ -1,0 +1,172 @@
+On MongoDB Primary node:
+1). sudo -u ppoker vi /home/pg/pg-services/crm-mongodb/conf/mongodb.conf
+Comment the below entries only in the MongoDB primary node
+================ 
+replication:
+   replSetName: crmmongodb
+security:
+   keyFile: /home/pg/pg-services/crm-mongodb/conf/mongodb-keyfile
+   authorization: enabled
+================ 
+
+1a). chmod 600 /home/pg/pg-services/crm-mongodb/conf/mongodb-keyfile
+   
+for i in 10.1.115.92 10.1.115.93 10.1.115.94 ; do ssh $i " /home/pg/pg-services/crm-mongodb/bin/mongodb.sh status" ; done
+
+   
+2). sudo -u ppoker /home/pg/pg-services/crm-mongodb/bin/mongodb.sh start
+
+3). sudo -u ppoker /home/pg/thirdparty/mongodb-rhel70-3.0.11/bin/mongo
+
+4).
+In MOMGODB Console, run the below set of commands:-
+================================================
+use admin
+###
+db.createUser( {
+    user: "rootadmin",
+    pwd: "CRM-M0NG0-R00T",
+    roles: [ { role: "root", db: "admin" } ]
+  });
+###
+  
+db.createUser( {
+    user: "admin",
+    pwd: "CRM-M0NG0-ADM1N",
+    roles: [ { role: "userAdminAnyDatabase", db: "admin" } ]
+  });
+###
+
+db.createUser( { 
+    user: "campaignuser", 
+    pwd: "r00t_CRM", 
+    roles: [ { role: "readWrite", db: "campaignsdb" } ] 
+  });
+
+db.updateUser(
+   "campaignuser",
+   {    
+     roles : [
+               { "role" : "readWrite", "db": "persondb" }, 
+	     { "role" : "readWrite", "db" : "campaignsdb" }
+             ]
+    }
+)
+
+db.createUser( { 
+    user: "emailuser", 
+    pwd: "r00t_CRM", 
+    roles: [ { role: "readWrite", db: "emaildb" } ] 
+  });
+
+db.createUser( { 
+    user: "playerMetricsUser", 
+    pwd: "r00t_CRM", 
+    roles: [ { role: "readWrite", db: "playermetricsdb" } ] 
+  });
+
+db.updateUser(
+   "campaignuser",
+   {    
+     roles : [
+               { "role" : "readWrite", "db": "persondb" }, 
+	     { "role" : "readWrite", "db" : "campaignsdb" },
+	     { "role" : "read", "db" : "crmAdmin" }
+             ]
+    }
+)
+
+
+In production
+==================================
+db.createUser( { 
+    user: "campaignuser", 
+    pwd: "r00t_CRM_Production", 
+    roles: [ { role: "readWrite", db: "campaignsdb" } ] 
+  });
+
+db.createUser( { 
+    user: "emailuser", 
+    pwd: "r00t_CRM_Production", 
+    roles: [ { role: "readWrite", db: "emaildb" } ] 
+  });
+
+db.createUser( { 
+    user: "odsuser", 
+    pwd: "r00t_CRM_Production", 
+    roles: [ { role: "readWrite", db: "vipdb" } ] 
+  });
+
+db.createUser( { 
+    user: "playerMetricsUser", 
+    pwd: "r00t_CRM_Production", 
+    roles: [ { role: "readWrite", db: "playermetricsdb" } ] 
+  });
+
+db.updateUser(
+   "playerMetricsUser",
+   {    
+     roles : [
+               { "role" : "readWrite", "db": "playermetricsdb" }, 
+	     { "role" : "read", "db" : "crmAdmin" }
+             ]
+    }
+)
+
+==================================
+
+###
+
+db.createUser( { 
+    user: "crmuser", 
+    pwd: "r00t_CRM", 
+    roles: [ { role: "readWriteAnyDatabase", db: "admin" } ] 
+  });
+###
+
+exit
+
+================================================
+
+
+5).
+sudo -u ppoker /home/pg/pg-services/crm-mongodb/bin/mongodb.sh stop
+
+On Secondary nodes :
+======================
+6).
+sudo -u ppoker vi /home/pg/pg-services/crm-mongodb/conf/mongodb.conf
+
+7).
+sudo -u ppoker vi /home/pg/pg-services/crm-mongodb/conf/mongodb-keyfile
+
+8).
+sudo -u ppoker chmod 600 /home/pg/pg-services/crm-mongodb/conf/mongodb-keyfile
+
+9).
+sudo -u ppoker /home/pg/pg-services/crm-mongodb/bin/mongodb.sh start
+
+
+Come back to the primary node and run the below commands
+========================================================
+10).
+sudo -u ppoker vi /home/pg/pg-services/crm-mongodb/conf/mongodb.conf
+
+Uncomment the commented entries earlier in step One
+
+11).
+sudo -u ppoker vi /home/pg/pg-services/crm-mongodb/conf/mongodb-keyfile
+
+12).
+sudo -u ppoker chmod 600 /home/pg/pg-services/crm-mongodb/conf/mongodb-keyfile
+
+13). sudo -u ppoker vi /home/pg/pg-services/crm-mongodb/conf/initiateReplSet.js.nonreplaced
+Add the below entries after 1st line
+use admin
+db.auth("rootadmin","CRM-M0NG0-R00T")
+
+14).
+sudo -u ppoker /home/pg/pg-services/crm-mongodb/bin/mongodb.sh start
+
+
+/home/pg/partygaming/conf/crm_mongo_release.bin
